@@ -1,0 +1,261 @@
+package com.example.service;
+
+import java.text.DecimalFormat;
+import java.util.List;
+import java.util.Optional;
+import java.util.Random;
+import javax.mail.MessagingException;
+import javax.validation.ConstraintViolationException;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.stereotype.Service;
+import com.example.EmailUtility;
+import com.example.controller.AdminController;
+import com.example.dto.UsersDto;
+import com.example.entity.Sports;
+import com.example.entity.Users;
+import com.example.exception.NoContentFound;
+import com.example.exception.UserException;
+import com.example.repository.CommentsRepository;
+import com.example.repository.EnrollmentRepository;
+import com.example.repository.SportsRepository;
+import com.example.repository.UsersRepository;
+
+@Service
+public class AdminServiceImpl implements IAdminService {
+
+	private String msg;
+	private String subject;
+
+	public static final Logger logger = LogManager.getLogger(AdminController.class.getName());
+
+	@Autowired
+	UsersRepository userRepository;
+
+	@Autowired
+	EnrollmentRepository enrollmentRepository;
+
+	@Autowired
+	CommentsRepository commentsRepository;
+
+	@Autowired
+	SportsRepository sportRepository;
+
+	@Autowired
+	EmailUtility emailUtility;
+
+	@Override
+	public boolean addManager(UsersDto user) throws UserException, MessagingException{
+		if (userRepository.findByUserName(user.getUserName()) != null
+				|| userRepository.findByUserEmail(user.getUserEmail()) != null) {
+			throw new UserException("User with same credentials already exist");
+		} else {
+			Users users = new Users(user.getUserName(), user.getUserEmail(), user.getUserPassword(),
+					user.getUserPhone(), user.getUserAddress(), user.getUserRole(), user.getUserBloodGroup(),
+					user.isActive(), user.getFailedLoginCounts());
+			userRepository.save(users);
+			String to = user.getUserEmail();
+			subject = "Login credintials for Deccan Sport Club";
+			String username = user.getUserName();
+			String pass = user.getUserPassword();
+			msg = "Hello " + user.getUserName() + ",\n \n Welcome to Deccan Sport Club('.')\n"
+					+ "\n Your login credentials are as follows:\n" + "\n  Username : " + username + "\n Password :"
+					+ pass + "\n \n \n \n This is an auto generated mail please do not revert back on this mail.";
+			logger.info("Email sent to manager");
+			emailUtility.sendEmail(to, msg, subject);
+			return true;
+		}
+	}
+
+	@Override
+	public List<Users> getAllManagers() throws NoContentFound {
+		if (userRepository.findByUserRole("MANAGER").isEmpty()) {
+			logger.error("No managers Found here");
+			throw new NoContentFound("Managaer not found");
+		} else {
+			logger.info("Managers Found");
+			return userRepository.findByUserRole("MANAGER");
+
+		}
+	}
+
+	@Override
+	public boolean deleteManagerById(int userId) throws UserException {
+		Optional<Users> user = userRepository.findById(userId);
+		if (user.isPresent()) {
+			logger.info("user with given id present while deleting");
+				logger.info("manager deleted");
+				userRepository.deleteById(userId);
+				return true;
+			} else {
+				logger.error("Manager doesn't exist");
+				throw new UserException("Can't delete this user");
+			}	
+	}
+
+	public Optional<Users> getManagerById(int userId) throws NoContentFound {
+		Optional<Users> user = userRepository.findById(userId);
+		if (user.isEmpty()) {
+			logger.error("Managers not found ");
+			throw new NoContentFound("Managaer not Found while deleting");
+		} else {
+			logger.info("No managers Found");
+			return user;
+		}
+	}
+	
+	public Users getManagerByName(String userName) {
+		return userRepository.findByUserName(userName);
+		 
+	}
+
+	@Override
+	public boolean updateManagerById(UsersDto user, int userId) throws UserException {
+		if (userRepository.updateUserById(userId,user.getUserEmail(), user.getUserPassword(), user.getUserPhone(),
+				user.getUserAddress(), user.getUserRole(), user.getUserBloodGroup(), user.isActive(),
+				user.getFailedLoginCounts(), userId)==1) {
+			logger.info("Manager Updated");
+			return true;
+		} else {
+			logger.error("Error while updating");
+			throw new UserException("Can't update manager");
+		}
+
+	}
+
+	/// In case you want send mail to all locked users
+	@Override
+	public void mailLockedUsers() {
+		Users[] inActiveUsers = userRepository.findByIsActive(false);
+		for (Users user : inActiveUsers) {
+			String to = user.getUserEmail();
+			subject = "Link for unlock account";
+			msg = "Hello " + user.getUserName() + "link";
+			try {
+				emailUtility.sendEmail(to, msg, subject);
+			} catch (Exception e) {
+				e.getLocalizedMessage();
+			}
+		}
+	}
+
+
+	@Override
+	public String sendOTP(String email) {
+		String otp;
+		otp = new DecimalFormat("000000").format(new Random().nextInt(999999));
+		msg = "Hello Account Activation OTP is: " + otp;
+		subject = "Deccan Sports Club Account Activation";
+		try {
+			emailUtility.sendEmail(email, msg, subject);
+		} catch (MessagingException e) {
+			e.printStackTrace();
+		}
+		return otp;
+	}
+
+	public boolean activateAccount(String userEmail) throws UserException {
+		if (userRepository.activateAccount(userEmail)==1) {
+			return true;
+		} else {
+			throw new UserException("User can't be activated");
+		}
+
+	}
+
+	
+	
+	
+	//sportsservice implementation
+	public List<Sports> getAllSports() {
+		return sportRepository.findAll();
+	}
+	
+	public boolean addSports(Sports sports) {
+		Sports sport=sportRepository.save(sports);
+		if(sport != null)
+		{
+			return true;
+		}
+		else
+		{
+			return false;
+		}
+	}	
+
+	public boolean deleteSportById(int sportId) {
+		Optional<Sports> sport = sportRepository.findById(sportId);
+
+		if (sport.isPresent()) {
+			sportRepository.deleteById(sportId);
+			return true;
+		} else {
+			return false;
+		}
+	}
+
+	public Sports UpdateSports(Sports sport, int sportId) {
+		Optional<Sports> oldsport = sportRepository.findById(sportId);
+
+		if (oldsport.isPresent()) {
+			Sports newSport = oldsport.get();
+			newSport.setSportId(sport.getSportId());
+			newSport.setSportName(sport.getSportName());
+			newSport.setSportFees(sport.getSportFees());
+			newSport.setSportAddDate(sport.getSportAddDate());
+			newSport.setAdminName(sport.getAdminName());
+			newSport = sportRepository.save(newSport);
+
+			return newSport;
+		} else {
+			sport = sportRepository.save(sport);
+
+			return sport;
+		}
+	}
+
+	public Sports getSportById(int sportId) {
+		Optional<Sports> sport = sportRepository.findById(sportId);
+
+		if (sport.isPresent()) {
+			return sport.get();
+		} else {
+			return null;
+		}
+	}
+
+	public Sports getSportByName(String SportName) {
+		Optional<Sports> sport = sportRepository.findBySportName(SportName);
+
+		if (sport.isPresent()) {
+			return sport.get();
+		} else {
+			return null;
+		}
+	}
+	
+	public Users updatePassword(Authentication auth, String newPassword, String oldPassword) {
+		Users user = userRepository.findByUserName(auth.getName());
+		System.out.println(user);	
+		BCryptPasswordEncoder passwordEncoder=new BCryptPasswordEncoder();
+		boolean isPasswordMatch=passwordEncoder.matches(oldPassword, user.getUserPassword());
+		if (user != null && isPasswordMatch) {
+			user.setUserPassword(passwordEncoder.encode(newPassword));
+			System.out.println(newPassword);
+			userRepository.saveAndFlush(user);
+			return user;
+		} else {
+			return null;
+		}
+	}
+	
+	
+	public Users getAdminByName(String userName) {
+		return userRepository.findByUserName(userName);		 
+	}	
+	
+}

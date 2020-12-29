@@ -1,0 +1,143 @@
+package com.example.service;
+
+import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.*;
+
+import java.sql.Date;
+import java.time.LocalDate;
+import java.util.List;
+import javax.mail.MessagingException;
+import javax.validation.ConstraintViolationException;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import com.example.EmailUtility;
+import com.example.controller.AdminController;
+import com.example.controller.AuthenticationController;
+import com.example.controller.UserController;
+import com.example.dto.UsersDto;
+import com.example.entity.Sports;
+import com.example.entity.Users;
+import com.example.exception.NoContentFound;
+import com.example.exception.UserException;
+import com.example.repository.BatchesRepository;
+import com.example.repository.CommentsRepository;
+import com.example.repository.EnrollmentRepository;
+import com.example.repository.LikesRepository;
+import com.example.repository.OffersRepository;
+import com.example.repository.SportsRepository;
+import com.example.repository.UsersRepository;
+
+class AdminTest {
+
+	@InjectMocks
+	private AdminServiceImpl adminServiceImpl;
+
+	@Mock
+	private AuthenticationController authController;
+
+	@Mock
+	private AdminController adminController;
+
+	@Mock
+	private UsersRepository userrepository;
+
+	@Mock
+	private SportsRepository sportRepository;
+
+	@Mock
+	private EmailUtility emailUtility;
+
+	@BeforeEach
+	void setup() throws Exception {
+		MockitoAnnotations.initMocks(this);
+	}
+
+/*	@Test
+	void testAddManager() throws UserException, MessagingException, NoContentFound {
+		UsersDto user1 = new UsersDto("Arunabh", "arunabhs@cyabge.com", new BCryptPasswordEncoder().encode("arunabh"),
+				"9545777533", "Cybage1", "MANAGER", "O+", true, 0);
+		adminServiceImpl.addManager(user1);
+		assertNotNull(adminServiceImpl.getManagerByName("Arunabh"));
+	}
+
+	@Test
+	void testGetAllManagers() throws NoContentFound {
+		assertNotNull(adminServiceImpl.getAllManagers());
+		System.out.println(adminServiceImpl.getAllManagers());
+
+	}
+
+	/*
+	 * @Test void testDeleteManagerById() {
+	 * adminServiceImpl.deleteManagerById(userId); }
+	 */
+
+	@Test
+	void testGetManagerById() {
+		fail("Not yet implemented");
+	}
+
+	@Test
+	void testUpdateManagerById() {
+		fail("Not yet implemented");
+	}
+
+	@Test
+	void testMailLockedUsers() {
+		fail("Not yet implemented");
+	}
+
+	@Test
+	void testSendOTP() {
+		fail("Not yet implemented");
+	}
+
+	@Test
+	void testActivateAccount() {
+		fail("Not yet implemented");
+	}
+
+	
+	@Test
+	void testGetAllSports() {
+		assertNotNull(adminServiceImpl.getAllSports());
+		System.out.println(adminServiceImpl.getAllSports());
+	}
+
+	@Test
+	void testAddSports() {
+	Sports sport = new Sports(1,"Judo", 5000,
+	Date.valueOf(LocalDate.parse("2020-08-04")), "Tejashri");
+	assertEquals(true,adminServiceImpl.addSports(sport));
+	}
+
+	@Test
+	void testDeleteSportById() {
+	adminServiceImpl.deleteSportById(19);
+	assertNull(adminServiceImpl.getSportById(19));
+	}
+
+	@Test
+	void testUpdateSports() {
+	Sports sport =adminServiceImpl.getSportById(9);
+	Sports sport1 =adminServiceImpl.UpdateSports(sport,8);
+	assertEquals(sport,sport1);	
+	}
+	
+	
+	@Test
+	void testupdatePassword() {
+	Users user	=adminServiceImpl.getAdminByName("Shubham");	
+	adminServiceImpl.updatePassword(SecurityContextHolder.getContext().getAuthentication(), "shubham123", user.getUserPassword());
+	Users user1	=adminServiceImpl.getAdminByName("Shubham");
+	String newpwd =user1.getUserPassword();
+	assertEquals("shubham123",newpwd);
+	}
+		
+
+}

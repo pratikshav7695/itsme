@@ -1,0 +1,235 @@
+package com.example.controller;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import java.io.FileNotFoundException;
+import java.util.List;
+
+import javax.mail.MessagingException;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.example.dto.PasswordUpdate;
+import com.example.dto.UsersDto;
+import com.example.exception.NoContentFound;
+import com.example.exception.UserException;
+import com.example.report.ReportService;
+import com.example.repository.UsersRepository;
+import com.example.entity.Sports;
+import com.example.entity.Users;
+import com.example.service.IAdminService;
+
+import net.sf.jasperreports.engine.JRException;
+import org.springframework.web.bind.annotation.CrossOrigin;
+
+@RestController
+@CrossOrigin(origins = "*")
+@RequestMapping("/admin")
+public class AdminController {
+
+	public static final Logger logger = LogManager.getLogger(AdminController.class.getName());
+
+	@Autowired
+	private IAdminService adminServiceI;
+
+	@Autowired
+	private ReportService reportService;
+
+	@Autowired
+	UsersRepository userRepository;
+	
+	
+	Users user;
+
+	// http://localhost:8093/admin/list-manager
+	@PreAuthorize("hasRole('ROLE_ADMIN')")
+	@GetMapping(value = "/list-manager", produces = MediaType.APPLICATION_JSON_VALUE)
+	public ResponseEntity<Object> getAllManagers() throws NoContentFound {
+		if (adminServiceI.getAllManagers().isEmpty()) {
+			logger.info("Manager not present");
+			return ResponseEntity.status(HttpStatus.NO_CONTENT).body("No managers found");
+		} else {
+			logger.info("Getting all managers");
+			return ResponseEntity.status(HttpStatus.OK).body(adminServiceI.getAllManagers());
+		}
+	}
+
+	// add+ email send to manager of login crud
+	@PreAuthorize("hasRole('ROLE_ADMIN')")
+	@PostMapping("/add-manager")
+	public ResponseEntity<Object> addManager(@RequestBody UsersDto user) throws UserException, MessagingException {
+		if (adminServiceI.addManager(user)) {
+
+			logger.info("Manager added");
+			return ResponseEntity.status(HttpStatus.OK).body("Manager Added Successfully");
+		} else {
+			logger.error("Error while adding manager");
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error while adding manager");
+		}
+
+	}
+
+	@PreAuthorize("hasRole('ROLE_ADMIN')")
+	@PutMapping("/update-manager-id/{userId}")
+	public ResponseEntity<Object> updateManagerId(@RequestBody UsersDto user, @PathVariable int userId)
+			throws UserException {
+		if (adminServiceI.updateManagerById(user, userId)) {
+			logger.info("Manager updated");
+			return ResponseEntity.status(HttpStatus.OK).body("Manager updated Successfully");
+		} else {
+			logger.error("Error while updating manager");
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error while updating");
+		}
+	}
+
+	@PreAuthorize("hasRole('ROLE_ADMIN')")
+	@DeleteMapping(value = "/delete-manager-id/{userId}")
+	public ResponseEntity<Object> deleteManagerById(@PathVariable int userId) throws UserException {
+		if (adminServiceI.deleteManagerById(userId)) {
+
+			logger.info("Manager deleted");
+			return ResponseEntity.status(HttpStatus.OK).body("Manager deleted Successfully");
+		} else {
+			logger.error("Error while deleteing Manager ");
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Can't be deleted");
+		}
+
+	}
+
+	@PreAuthorize("hasRole('ROLE_ADMIN')")
+	@GetMapping(value = "/activate-account-initiate/{userEmail}")
+	public ResponseEntity<String> activateAccountInitiate(@PathVariable String userEmail) {
+		Users user = userRepository.findByUserEmail(userEmail);
+		if (user != null) {
+			// .ts madhe save karaycha with email
+			String otp = adminServiceI.sendOTP(userEmail);
+			logger.info("OTP genarated");
+			return ResponseEntity.status(HttpStatus.OK).body(otp);
+		} else {
+			logger.info("Error in OTP genarated");
+			return ResponseEntity.status(HttpStatus.CONFLICT).body("Email doesn't exist");
+		}
+	}
+
+	@PreAuthorize("hasRole('ROLE_ADMIN')")
+	@PutMapping(value = "/activate-account-completed/{userEmail}")
+	public ResponseEntity<String> activateAccountCompleted(@PathVariable String userEmail) throws UserException {
+		if (adminServiceI.activateAccount(userEmail)) {
+			logger.info("Account activated");
+			return ResponseEntity.status(HttpStatus.OK).body("Account Activated");
+		} else {
+			logger.info("Can't activate account ");
+			return ResponseEntity.status(HttpStatus.OK).body("Account could not be activated");
+		}
+	}
+
+	@PreAuthorize("hasRole('ROLE_ADMIN')")
+	@GetMapping(value = "/report-enrollment/{format}")
+	public String generateReportForEnrollment(@PathVariable String format) throws FileNotFoundException, JRException {
+		logger.info("Enrollemnt report generated");
+		return reportService.exportReportForEnrollment(format);
+	}
+
+	@PreAuthorize("hasRole('ROLE_ADMIN')")
+	@GetMapping(value = "/report-batch/{format}")
+	public String generateReportForBatches(@PathVariable String format) throws FileNotFoundException, JRException {
+		logger.info("Batch report generated");
+		return reportService.exportReportForBatches(format);
+	}
+
+	@PreAuthorize("hasRole('ROLE_ADMIN')")
+	@GetMapping(value = "/report-sports/{format}")
+	public String generateReportForSports(@PathVariable String format) throws FileNotFoundException, JRException {
+		logger.info("Sports report generated");
+		return reportService.exportReportForSports(format);
+	}
+
+		
+	// Sports crud
+	@PreAuthorize("hasRole('ROLE_ADMIN')")
+	@GetMapping(value = "/list-sports")
+	public ResponseEntity<?> getSports() {
+		System.out.println("Inside list sport controller");
+		List<Sports> listOfAllSports = adminServiceI.getAllSports();
+		if (listOfAllSports.isEmpty()) {
+			return ResponseEntity.status(HttpStatus.NO_CONTENT).body("No Sports available in database");
+		} else {
+			System.out.println(listOfAllSports);
+			return ResponseEntity.status(HttpStatus.OK).body(listOfAllSports);
+		}
+	}
+
+	@PreAuthorize("hasRole('ROLE_ADMIN')")
+	@GetMapping("/getsports/{sportId}")
+	public ResponseEntity<Sports> getEmployeeById(@PathVariable int sportId) {
+		Sports sport = adminServiceI.getSportById(sportId);
+		return new ResponseEntity<Sports>(sport, new HttpHeaders(), HttpStatus.OK);
+	}
+	
+	
+	@PreAuthorize("hasRole('ROLE_ADMIN')")
+	@PostMapping(value = "/add-sports")
+	public ResponseEntity<Object> addManager(@RequestBody Sports sports) {
+		if (adminServiceI.addSports(sports)) {
+			logger.info("sports added");
+			return ResponseEntity.status(HttpStatus.OK).body("Sports Added Successfully");
+		} else {
+			logger.error("Error while adding manager");
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error while adding sports");
+		}
+
+	}
+
+	@PreAuthorize("hasRole('ROLE_ADMIN')")
+	@PutMapping("/updatesports/{sportId}")
+	public ResponseEntity<Sports> updateSports(@RequestBody Sports sport, @PathVariable int sportId) {
+		Sports updated = adminServiceI.UpdateSports(sport, sportId);
+		return new ResponseEntity<Sports>(updated, new HttpHeaders(), HttpStatus.OK);
+	}
+
+	@PreAuthorize("hasRole('ROLE_ADMIN')")
+	@DeleteMapping("/delete/{sportId}")
+	public String deleteSportById(@PathVariable int sportId) {
+		if (adminServiceI.deleteSportById(sportId)) {
+			return "Sports get deleted" + sportId;
+		} else {
+			return "No sports available for deletion at " + sportId;
+		}
+	}
+
+	@PreAuthorize("hasRole('ROLE_ADMIN')")
+	@PostMapping("/update-password")
+	public ResponseEntity<?> updatePassword(@RequestBody PasswordUpdate passwordUpdate) {
+		user =adminServiceI.updatePassword(SecurityContextHolder.getContext().getAuthentication(),
+				passwordUpdate.getNewPassword(), passwordUpdate.getOldPassword());
+		if (user != null) {
+			return ResponseEntity.status(HttpStatus.OK).body("Password Update Succssesful");
+		} else {
+			return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE).body("Something went wrong");
+		}
+	}
+	
+	@PreAuthorize("hasRole('ROLE_ADMIN')")
+	@GetMapping("/getadmin/{adminName}")
+	public ResponseEntity<Users> getEmployeeById(@PathVariable String adminName) {
+		Users user = adminServiceI.getAdminByName(adminName);
+		return new ResponseEntity<Users>(user,new HttpHeaders(), HttpStatus.OK);
+	}
+	
+	
+	
+}

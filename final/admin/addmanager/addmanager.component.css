@@ -1,0 +1,8 @@
+#container{
+    margin-top: 1rem;
+    max-width: 35rem;
+    height: 30rem;
+    border: 0.2rem solid #9C9C9C;
+    background-image: linear-gradient(to right,rgb(211, 222, 228), #2d89d4);
+    align-self: center;
+}

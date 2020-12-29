@@ -1,0 +1,60 @@
+<div id="register">
+        <h3 class="text-center text-justify pt-5">Register Here</h3>
+        <div class="container">
+            <div id="register-row" class="row justify-content-center align-items-center">
+                <div id="register-column" class="col-md-6">
+                    <div id="register-box" class="col-md-12">
+                      <!-- <p [ngStyle] = "{'color': 'red'}" *ngIf="message">{{message}}</p> -->
+                      <form (ngSubmit)="onSubmit()" >
+                        <div class="form-group input-group">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text"> <i class="fa fa-user"></i> </span>
+                             </div>
+                            <input name="userName" class="form-control" placeholder="User-Name" type="text"  [(ngModel)]="user.userName">
+                        </div> <!-- form-group// -->
+                        <div class="form-group input-group">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text"> <i class="fa fa-envelope"></i> </span>
+                             </div>
+                            <input name="userEmail" class="form-control" placeholder="Email address" type="email"  [(ngModel)]="user.userEmail">
+                            <!-- <input type="button" name="check" class="btn btn-info btn-md" value="Verify Email"  > -->
+                            <!-- (click)="verifyEmail(user.userEmail)" -->
+                        </div> <!-- form-group// -->
+                        <div class="form-group input-group">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text"> <i class="fa fa-lock"></i> </span>
+                             </div>
+                            <input name="userPassword" class="form-control" placeholder="Password" type="password"  [(ngModel)]="user.userPassword">                           
+                        </div>
+                         <!-- form-group// -->
+                         <div class="form-group input-group">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text"> <i class="fa fa-phone"></i> </span>
+                             </div>
+                            <input name="userPhone" class="form-control" placeholder="Phone" type="text"  [(ngModel)]="user.userPhone">
+                        </div> <!-- form-group end.// -->
+                        <div class="form-group input-group">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text"> <i class="fa fa-building"></i> </span>
+                             </div>
+                            <input name="userAddress" class="form-control" placeholder="Address" type="text"  [(ngModel)]="user.userAddress">
+                        </div> <!-- form-group// -->
+                        <div class="form-group input-group">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text"> <i class="fa fa-building"></i> </span>
+                             </div>
+                            <input name="userBloodGroup" class="form-control" placeholder="Blood-Group" type="text"  [(ngModel)]="user.userBloodGroup">
+                        </div> <!-- form-group// -->                                      
+                        <div class="form-group">
+                            <button type="submit" class="btn btn-primary btn-block"> Add Manager </button>
+                        </div> <!-- form-group// -->      
+                        <p class="text-center">Have an account? <a routerLink="/login" class="btn btn-primary btn-large">Login</a> </p>                                                                 
+                    </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    
